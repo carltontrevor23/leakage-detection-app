@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="panel hero">
+  <h2>Real-time leak detection from pipeline imagery</h2>
+  <p>Upload high-resolution images and get instant object detection results with annotated visual output.</p>
+  <div class="kpi-grid">
+    <div class="kpi-card"><h3>100+ images / hour</h3><p>Validated pipeline throughput</p></div>
+    <div class="kpi-card"><h3>0.95 precision</h3><p>Calibration from field dataset</p></div>
+    <div class="kpi-card"><h3>Fail-safe monitoring</h3><p>Edge-ready pipeline safety</p></div>
+  </div>
+  <a href="/upload" class="btn btn-secondary">Go to Image Upload</a>
+</section>
+
+<section class="panel"> 
+  <h3>How It Works</h3>
+  <ol>
+    <li>Upload pipeline imagery (JPEG, PNG, WebP)</li>
+    <li>Set confidence threshold for detection sensitivity</li>
+    <li>See annotated image and leak intel instantly</li>
+  </ol>
+</section>
+{% endblock %}
