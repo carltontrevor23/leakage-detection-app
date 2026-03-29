@@ -5,11 +5,57 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import PlainTextResponse
 import logging
+import os
+import joblib
+import tensorflow as tf
+import keras
+from keras.models import load_model
+from keras import layers
 
 from app.config import settings
 from app.routers import detection, health
+from app.routers import sensor
 
-# Create FastAPI app
+
+@keras.saving.register_keras_serializable()
+class PositionalEmbedding(layers.Layer):
+    def __init__(self, sequence_length, d_model, **kwargs):
+        super().__init__(**kwargs)
+        self.sequence_length = sequence_length
+        self.d_model = d_model
+        self.position_embeddings = layers.Embedding(
+            input_dim=sequence_length,
+            output_dim=d_model
+        )
+
+    def call(self, inputs):
+        positions = tf.range(start=0, limit=self.sequence_length, delta=1)
+        embedded_positions = self.position_embeddings(positions)
+        return inputs + embedded_positions
+
+    def get_config(self):
+        config = super().get_config()
+        config.update(
+            {
+                "sequence_length": self.sequence_length,
+                "d_model": self.d_model,
+            }
+        )
+        return config
+
+
+TRANSFORMER_MODEL_PATH = os.path.join(
+    "ml_models", "transformer", "train3_transformer_autoencoder.keras"
+)
+SCALER_PATH = os.path.join(
+    "ml_models", "transformer", "train3_transformer_scaler.pkl"
+)
+
+ANOMALY_THRESHOLD = 0.0011916750946368263
+SEQUENCE_LENGTH = 20
+NUM_FEATURES = 56
+
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
@@ -18,13 +64,10 @@ app = FastAPI(
     redoc_url="/redoc" if settings.DEBUG else None,
 )
 
-# Jinja templates
 templates = Jinja2Templates(directory="templates")
 
-# Mount frontend assets
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -33,27 +76,48 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files
 app.mount("/media", StaticFiles(directory=str(settings.MEDIA_ROOT)), name="media")
 
-# Include routers
 app.include_router(health.router, tags=["Health"])
 app.include_router(detection.router, prefix="/api/v1", tags=["Detection"])
+app.include_router(sensor.router, prefix="/api/v1", tags=["Sensor"])
 
 
 @app.on_event("startup")
 async def startup_event():
     """Load models on startup"""
     from app.services.yolo_service import YOLOService
-    
+
     try:
         YOLOService.get_model()
         print(f"[Startup] YOLOv8 model loaded successfully from {settings.YOLO_MODEL_PATH}")
     except Exception as e:
         print(f"[Startup] Warning: Could not load YOLO model: {e}")
 
+    try:
+        app.state.transformer_model = load_model(
+            TRANSFORMER_MODEL_PATH,
+            custom_objects={"PositionalEmbedding": PositionalEmbedding},
+            compile=False,
+        )
+        print(f"[Startup] Transformer model loaded successfully from {TRANSFORMER_MODEL_PATH}")
+    except Exception as e:
+        app.state.transformer_model = None
+        print(f"[Startup] Warning: Could not load transformer model: {e}")
 
-@app.get("/", response_class=None)
+    try:
+        app.state.scaler = joblib.load(SCALER_PATH)
+        print(f"[Startup] Scaler loaded successfully from {SCALER_PATH}")
+    except Exception as e:
+        app.state.scaler = None
+        print(f"[Startup] Warning: Could not load scaler: {e}")
+
+    app.state.anomaly_threshold = ANOMALY_THRESHOLD
+    app.state.sequence_length = SEQUENCE_LENGTH
+    app.state.num_features = NUM_FEATURES
+
+
+@app.get("/")
 async def root(request: Request):
     """Landing page for UI"""
     return templates.TemplateResponse(
@@ -63,7 +127,7 @@ async def root(request: Request):
     )
 
 
-@app.get("/upload", response_class=None)
+@app.get("/upload")
 async def upload_page(request: Request):
     """Upload page for pipeline leak detection"""
     return templates.TemplateResponse(
@@ -77,4 +141,3 @@ async def upload_page(request: Request):
 async def global_exception_handler(request: Request, exc: Exception):
     logging.exception("Unhandled exception during request")
     return PlainTextResponse(str(exc), status_code=500)
-
