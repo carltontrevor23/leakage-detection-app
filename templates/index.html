@@ -7,35 +7,35 @@
   <p>Select how you want to analyze your pipeline data.</p>
 </section>
 
-<section class="detection-modes">
+<div class="detection-modes">
 
   <div class="mode-card">
-    <div class="mode-icon">🖼️</div>
-    <h3>Vision-Based Detection</h3>
-    <p>Detect visible pipeline leaks from uploaded images using a YOLO object detection model.</p>
-    <ul>
-      <li>Annotated bounding boxes</li>
-      <li>Confidence scores</li>
-      <li>100+ images / hour</li>
-      <li>0.95 precision</li>
-    </ul>
-    <a href="/upload" class="btn btn-primary">Open Image Detection</a>
+    <span class="mode-card-tag">Vision · YOLOv8</span>
+    <h3>Image Detection</h3>
+    <p>Detect visible pipeline leaks from uploaded images. Get annotated results with bounding boxes and confidence scores in seconds.</p>
+    <div class="mode-card-features">
+      <span>Annotated bounding boxes</span>
+      <span>Adjustable confidence threshold</span>
+      <span>100+ images / hour throughput</span>
+      <span>0.95 field-calibrated precision</span>
+    </div>
+    <a href="/upload" class="btn btn-primary" style="margin-top:0.5rem;">Open Image Detection</a>
   </div>
 
   <div class="mode-card">
-    <div class="mode-icon">📡</div>
-    <h3>Sensor-Based Detection</h3>
-    <p>Detect abnormal pipeline behavior from sensor sequences using a Transformer autoencoder model.</p>
-    <ul>
-      <li>Anomaly score</li>
-      <li>Reconstruction error</li>
-      <li>Leak risk classification</li>
-      <li>Low / Medium / High risk</li>
-    </ul>
-    <a href="/sensor" class="btn btn-primary">Open Sensor Detection</a>
+    <span class="mode-card-tag">Sensor · Transformer</span>
+    <h3>Sensor Detection</h3>
+    <p>Detect abnormal pipeline behavior from time-series sensor sequences using a Transformer autoencoder anomaly model.</p>
+    <div class="mode-card-features">
+      <span>Reconstruction error scoring</span>
+      <span>Low / Medium / High risk levels</span>
+      <span>CSV upload or sample data</span>
+      <span>20 × 56 sensor sequence input</span>
+    </div>
+    <a href="/sensor" class="btn btn-primary" style="margin-top:0.5rem;">Open Sensor Detection</a>
   </div>
 
-</section>
+</div>
 
 <section class="panel">
   <h3>How It Works</h3>
@@ -43,17 +43,17 @@
     <div>
       <h4>Vision Pipeline</h4>
       <ol>
-        <li>Upload pipeline image</li>
-        <li>Set confidence threshold</li>
-        <li>View annotated result</li>
+        <li>Upload a pipeline image (JPEG, PNG, WebP)</li>
+        <li>Set your confidence threshold</li>
+        <li>View annotated result and leak intel instantly</li>
       </ol>
     </div>
     <div>
       <h4>Sensor Pipeline</h4>
       <ol>
-        <li>Upload or load sensor CSV</li>
+        <li>Upload a sensor CSV or use sample data</li>
         <li>Run transformer anomaly detection</li>
-        <li>View leak risk and anomaly status</li>
+        <li>View leak risk level and anomaly status</li>
       </ol>
     </div>
   </div>

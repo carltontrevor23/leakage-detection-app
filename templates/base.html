@@ -5,6 +5,8 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ title if title else "Pipeline Leak Detector" }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="/static/css/styles.css" />
   <link rel="icon" href="/static/images/oil-drop.svg" />
 </head>
@@ -12,14 +14,19 @@
   <header class="app-header">
     <div class="container header-content">
       <h1>Pipeline Leak Detector</h1>
-      <p>Multimodal pipeline leak detection using imagery and sensor analytics.</p>
+      <p>Multimodal monitoring · Imagery &amp; Sensor Analytics</p>
+      <nav class="header-nav">
+        <a href="/" class="nav-pill">Home</a>
+        <a href="/upload" class="nav-pill">Image Detection</a>
+        <a href="/sensor" class="nav-pill">Sensor Detection</a>
+      </nav>
     </div>
   </header>
 
   <main class="container">{% block content %}{% endblock %}</main>
 
   <footer class="app-footer">
-    <p>© 2026 Industrial AI Solutions · Built with FastAPI + YOLOv8 + Transformer Autoencoder</p>
+    <p>© 2026 Industrial AI Solutions &nbsp;·&nbsp; FastAPI + YOLOv8 + Transformer Autoencoder</p>
   </footer>
 </body>
 </html>
