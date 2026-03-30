@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="margin-bottom:1rem;">
+  <a href="/" class="btn btn-secondary">← Back to Home</a>
+</div>
+<section class="panel">
+  <h2>Sensor-Based Leak Detection</h2>
+  <p style="color:#b4c4dd;">Upload a CSV file containing 20 rows and 56 columns of sensor readings.</p>
+
+  <div style="margin-top:1rem;">
+    <label class="form-label">Upload Sensor CSV (20 rows × 56 columns)</label>
+    <input type="file" id="csvInput" accept=".csv" />
+  </div>
+
+  <div style="margin-top:1rem; display:flex; gap:1rem; flex-wrap:wrap;">
+    <button class="btn btn-primary" id="runBtn">Run Detection</button>
+    <button class="btn btn-secondary" id="sampleBtn">Use Sample Data</button>
+  </div>
+
+  <div id="statusBox" class="status-box" style="display:none;"></div>
+</section>
+
+<section class="panel" id="resultSection" style="display:none;">
+  <h3>Detection Results</h3>
+
+  <div class="sensor-result-grid">
+    <div class="sensor-result-card">
+      <span class="result-label">Leak Detected</span>
+      <span class="result-value" id="resLeak">—</span>
+    </div>
+    <div class="sensor-result-card">
+      <span class="result-label">Risk Level</span>
+      <span class="result-value" id="resRisk">—</span>
+    </div>
+    <div class="sensor-result-card">
+      <span class="result-label">Reconstruction Error</span>
+      <span class="result-value" id="resError">—</span>
+    </div>
+    <div class="sensor-result-card">
+      <span class="result-label">Threshold</span>
+      <span class="result-value" id="resThreshold">—</span>
+    </div>
+  </div>
+
+  <div class="sensor-status-banner" id="statusBanner">
+    <h4 id="bannerStatus">—</h4>
+    <p id="bannerMessage">—</p>
+  </div>
+</section>
+
+<script>
+const statusBox = document.getElementById('statusBox');
+const resultSection = document.getElementById('resultSection');
+const runBtn = document.getElementById('runBtn');
+const sampleBtn = document.getElementById('sampleBtn');
+
+function showStatus(msg, isError = false) {
+  statusBox.style.display = 'block';
+  statusBox.textContent = msg;
+  statusBox.className = 'status-box' + (isError ? ' error' : '');
+}
+
+function showResults(data) {
+  const risk = data.risk_level;
+
+  document.getElementById('resLeak').textContent = data.leak_detected ? 'Yes' : 'No';
+  document.getElementById('resLeak').className = 'result-value ' + (data.leak_detected ? 'high' : 'normal');
+
+  document.getElementById('resRisk').textContent = risk.charAt(0).toUpperCase() + risk.slice(1);
+  document.getElementById('resRisk').className = 'result-value ' + risk;
+
+  document.getElementById('resError').textContent = data.reconstruction_error.toExponential(4);
+  document.getElementById('resThreshold').textContent = data.threshold.toExponential(4);
+
+  const banner = document.getElementById('statusBanner');
+  banner.className = 'sensor-status-banner ' + risk;
+  document.getElementById('bannerStatus').textContent = data.status;
+  document.getElementById('bannerMessage').textContent = data.message;
+
+  resultSection.style.display = 'block';
+}
+
+async function runPrediction(sequence) {
+  showStatus('Running transformer inference...');
+  runBtn.disabled = true;
+
+  try {
+    const response = await fetch('/api/v1/sensor/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sequence }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Unknown error');
+    }
+
+    const data = await response.json();
+    showStatus('Inference complete.');
+    showResults(data);
+
+  } catch (err) {
+    showStatus('Error: ' + err.message, true);
+  } finally {
+    runBtn.disabled = false;
+  }
+}
+
+// CSV upload
+runBtn.addEventListener('click', () => {
+  const file = document.getElementById('csvInput').files[0];
+  if (!file) { showStatus('Please select a CSV file first.', true); return; }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const lines = e.target.result.trim().split('\n');
+      const sequence = lines.map(line => line.split(',').map(Number));
+
+      if (sequence.length !== 20) throw new Error(`Expected 20 rows, got ${sequence.length}`);
+      if (sequence[0].length !== 56) throw new Error(`Expected 56 columns, got ${sequence[0].length}`);
+
+      runPrediction(sequence);
+    } catch (err) {
+      showStatus('CSV error: ' + err.message, true);
+    }
+  };
+  reader.readAsText(file);
+});
+
+// Sample data button
+sampleBtn.addEventListener('click', () => {
+  const sequence = Array.from({ length: 20 }, () =>
+    Array.from({ length: 56 }, () => parseFloat((Math.random() * 2).toFixed(4)))
+  );
+  runPrediction(sequence);
+});
+</script>
+{% endblock %}

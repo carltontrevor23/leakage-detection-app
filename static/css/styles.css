@@ -56,7 +56,146 @@ input[type=file], input[type=range] { width: 100%; margin-bottom: 0.65rem; }
 
 .app-footer { background: #0d1117; text-align: center; padding: 0.8rem; margin-top: 1.6rem; color: #71849b; border-top: 1px solid #23304a; }
 
+/* Detection mode cards */
+.detection-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.mode-card {
+  background: #131d2b;
+  border: 1px solid #273847;
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.mode-card:hover {
+  border-color: #5b9cff;
+  transform: translateY(-3px);
+}
+
+.mode-card .mode-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.mode-card h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #8ab4ff;
+}
+
+.mode-card p {
+  margin: 0;
+  color: #b4c4dd;
+  flex-grow: 1;
+}
+
+.mode-card ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #a2b5cf;
+}
+
+.mode-card ul li {
+  margin-bottom: 0.3rem;
+}
+
+.mode-card .btn {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+}
+
+/* How it works two-column */
+.how-it-works-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.how-it-works-grid h4 {
+  color: #8ab4ff;
+  margin: 0 0 0.5rem;
+}
+
+.how-it-works-grid ol {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #b4c4dd;
+}
+
+.how-it-works-grid ol li {
+  margin-bottom: 0.4rem;
+}
+
+/* Sensor page */
+.sensor-result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.sensor-result-card {
+  background: #162437;
+  border: 1px solid #2e4261;
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.sensor-result-card .result-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #71849b;
+}
+
+.sensor-result-card .result-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #e6edf3;
+}
+
+.sensor-result-card .result-value.normal { color: #3fb950; }
+.sensor-result-card .result-value.medium { color: #d29922; }
+.sensor-result-card .result-value.high { color: #f85149; }
+
+.sensor-status-banner {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 10px;
+  border: 1px solid #2e4261;
+  background: #162437;
+}
+
+.sensor-status-banner.normal { border-color: #2ea043; background: #0d2318; }
+.sensor-status-banner.medium { border-color: #9e6a03; background: #271d08; }
+.sensor-status-banner.high { border-color: #8b1a1a; background: #2d0f0f; }
+
+.sensor-status-banner h4 {
+  margin: 0 0 0.4rem;
+  font-size: 1.1rem;
+}
+
+.sensor-status-banner p {
+  margin: 0;
+  color: #b4c4dd;
+}
+
 @media (max-width: 780px) {
   .header-content h1 { font-size: 1.75rem; }
   .kpi-grid { grid-template-columns: 1fr; }
+  .detection-modes { grid-template-columns: 1fr; }
+  .how-it-works-grid { grid-template-columns: 1fr; }
+  .sensor-result-grid { grid-template-columns: 1fr 1fr; }
 }

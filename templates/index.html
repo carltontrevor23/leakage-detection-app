@@ -1,23 +1,62 @@
 {% extends "base.html" %}
 
 {% block content %}
+
 <section class="panel hero">
-  <h2>Real-time leak detection from pipeline imagery</h2>
-  <p>Upload high-resolution images and get instant object detection results with annotated visual output.</p>
-  <div class="kpi-grid">
-    <div class="kpi-card"><h3>100+ images / hour</h3><p>Validated pipeline throughput</p></div>
-    <div class="kpi-card"><h3>0.95 precision</h3><p>Calibration from field dataset</p></div>
-    <div class="kpi-card"><h3>Fail-safe monitoring</h3><p>Edge-ready pipeline safety</p></div>
-  </div>
-  <a href="/upload" class="btn btn-secondary">Go to Image Upload</a>
+  <h2>Choose a Detection Mode</h2>
+  <p>Select how you want to analyze your pipeline data.</p>
 </section>
 
-<section class="panel"> 
-  <h3>How It Works</h3>
-  <ol>
-    <li>Upload pipeline imagery (JPEG, PNG, WebP)</li>
-    <li>Set confidence threshold for detection sensitivity</li>
-    <li>See annotated image and leak intel instantly</li>
-  </ol>
+<section class="detection-modes">
+
+  <div class="mode-card">
+    <div class="mode-icon">🖼️</div>
+    <h3>Vision-Based Detection</h3>
+    <p>Detect visible pipeline leaks from uploaded images using a YOLO object detection model.</p>
+    <ul>
+      <li>Annotated bounding boxes</li>
+      <li>Confidence scores</li>
+      <li>100+ images / hour</li>
+      <li>0.95 precision</li>
+    </ul>
+    <a href="/upload" class="btn btn-primary">Open Image Detection</a>
+  </div>
+
+  <div class="mode-card">
+    <div class="mode-icon">📡</div>
+    <h3>Sensor-Based Detection</h3>
+    <p>Detect abnormal pipeline behavior from sensor sequences using a Transformer autoencoder model.</p>
+    <ul>
+      <li>Anomaly score</li>
+      <li>Reconstruction error</li>
+      <li>Leak risk classification</li>
+      <li>Low / Medium / High risk</li>
+    </ul>
+    <a href="/sensor" class="btn btn-primary">Open Sensor Detection</a>
+  </div>
+
 </section>
+
+<section class="panel">
+  <h3>How It Works</h3>
+  <div class="how-it-works-grid">
+    <div>
+      <h4>Vision Pipeline</h4>
+      <ol>
+        <li>Upload pipeline image</li>
+        <li>Set confidence threshold</li>
+        <li>View annotated result</li>
+      </ol>
+    </div>
+    <div>
+      <h4>Sensor Pipeline</h4>
+      <ol>
+        <li>Upload or load sensor CSV</li>
+        <li>Run transformer anomaly detection</li>
+        <li>View leak risk and anomaly status</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
 {% endblock %}

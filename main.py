@@ -135,7 +135,14 @@ async def upload_page(request: Request):
         name="upload.html",
         context={},
     )
-
+@app.get("/sensor")
+async def sensor_page(request: Request):
+    """Sensor analysis page"""
+    return templates.TemplateResponse(
+        request=request,
+        name="sensor.html",
+        context={"title": "Sensor Analysis"},
+    )
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
