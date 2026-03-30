@@ -91,6 +91,45 @@ class TransformerService:
         return cls._scaler
 
     @classmethod
+    def get_risk_level(cls, mse: float) -> str:
+        """
+        Convert reconstruction error into a human-readable risk level.
+        """
+        if mse <= cls.THRESHOLD:
+            return "low"
+        elif mse <= cls.THRESHOLD * 3:
+            return "medium"
+        else:
+            return "high"
+
+    @classmethod
+    def get_status_message(cls, risk_level: str, is_anomaly: bool) -> Dict[str, str]:
+        """
+        Build user-friendly status and message for the prediction response.
+        """
+        if not is_anomaly:
+            return {
+                "status": "Normal operation",
+                "message": "Sensor pattern is within the expected operating range.",
+            }
+
+        if risk_level == "high":
+            return {
+                "status": "Potential leak detected",
+                "message": "Sensor pattern deviates significantly from normal operating conditions.",
+            }
+        elif risk_level == "medium":
+            return {
+                "status": "Suspicious sensor activity",
+                "message": "Sensor pattern shows unusual behavior and should be investigated.",
+            }
+        else:
+            return {
+                "status": "Slight anomaly detected",
+                "message": "Sensor pattern is slightly abnormal and should be monitored.",
+            }
+
+    @classmethod
     def predict(cls, sensor_data: List[List[float]]) -> Dict[str, Any]:
         """
         Run inference on sequence sensor data.
@@ -119,10 +158,15 @@ class TransformerService:
         reconstruction = model.predict(x_scaled, verbose=0)
         mse = np.mean(np.square(x_scaled - reconstruction))
         is_anomaly = mse > cls.THRESHOLD
+        risk_level = cls.get_risk_level(float(mse))
+        status_info = cls.get_status_message(risk_level, bool(is_anomaly))
 
         return {
             "reconstruction_error": float(mse),
             "threshold": float(cls.THRESHOLD),
             "is_anomaly": bool(is_anomaly),
-            "risk_level": "high" if is_anomaly else "low",
+            "leak_detected": bool(is_anomaly),
+            "risk_level": risk_level,
+            "status": status_info["status"],
+            "message": status_info["message"],
         }

@@ -1,4 +1,5 @@
 # app/routers/sensor.py
+
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field, model_validator
 from typing import List
@@ -12,7 +13,8 @@ class SensorDataRequest(BaseModel):
     """Request schema for transformer sensor data"""
     sequence: List[List[float]] = Field(
         ...,
-        description="A 20x56 sequence of sensor values"
+        description="A 20x56 sequence of sensor values",
+        example=[[1.0] * 56 for _ in range(20)]
     )
 
     @model_validator(mode="after")
@@ -32,7 +34,10 @@ class SensorPredictionResponse(BaseModel):
     reconstruction_error: float
     threshold: float
     is_anomaly: bool
+    leak_detected: bool
     risk_level: str
+    status: str
+    message: str
 
 
 @router.post(
@@ -46,8 +51,10 @@ async def predict_from_sensors(data: SensorDataRequest):
     Uses Transformer autoencoder model.
     """
     try:
+        # 🔥 Clean and simple — all logic handled in service
         prediction = TransformerService.predict(data.sequence)
         return SensorPredictionResponse(**prediction)
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
