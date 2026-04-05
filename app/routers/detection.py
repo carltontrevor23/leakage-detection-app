@@ -14,8 +14,6 @@ from app.models.detection import (
     SensorAnomalyResponse,
     MultimodalFusion,
 )
-from app.services.multimodal_service import MultimodalService
-from app.services.yolo_service import YOLOService
 from app.utils.file_handling import validate_image, save_upload_file
 
 router = APIRouter()
@@ -48,6 +46,8 @@ async def detect_leaks(
     inspection_id = uuid.uuid4().hex[:8]
     
     try:
+        from app.services.yolo_service import YOLOService
+
         # Save uploaded file
         upload_path = save_upload_file(
             file=image,
@@ -122,6 +122,8 @@ async def inspect_pipeline(
     inspection_id = uuid.uuid4().hex[:8]
 
     try:
+        from app.services.multimodal_service import MultimodalService
+
         sequence = MultimodalService.parse_sequence(sensor_sequence)
         upload_path = save_upload_file(
             file=image,

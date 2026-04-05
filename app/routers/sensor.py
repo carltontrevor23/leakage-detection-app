@@ -6,7 +6,6 @@ from typing import List
 
 from app.config import settings
 from app.models.detection import SensorAnomalyResponse
-from app.services.transformer_service import TransformerService
 
 router = APIRouter()
 
@@ -42,6 +41,8 @@ async def predict_from_sensors(data: SensorDataRequest):
     Uses Transformer autoencoder model.
     """
     try:
+        from app.services.transformer_service import TransformerService
+
         prediction = TransformerService.predict(data.sequence)
         return SensorAnomalyResponse(**prediction)
 

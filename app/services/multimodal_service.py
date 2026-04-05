@@ -1,9 +1,6 @@
 import json
 from typing import Any, Dict, List
 
-from app.services.transformer_service import TransformerService
-from app.services.yolo_service import YOLOService
-
 
 class MultimodalService:
     """
@@ -14,6 +11,8 @@ class MultimodalService:
 
     @staticmethod
     def parse_sequence(sequence_payload: str) -> List[List[float]]:
+        from app.services.transformer_service import TransformerService
+
         try:
             parsed = json.loads(sequence_payload)
         except json.JSONDecodeError as exc:
@@ -65,6 +64,9 @@ class MultimodalService:
 
     @classmethod
     def predict(cls, image_path: str, sensor_sequence: List[List[float]], conf_threshold: float) -> Dict[str, Any]:
+        from app.services.transformer_service import TransformerService
+        from app.services.yolo_service import YOLOService
+
         image_prediction = YOLOService.predict(
             image_path=image_path,
             conf_threshold=conf_threshold,

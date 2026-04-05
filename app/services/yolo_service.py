@@ -1,10 +1,8 @@
 # app/services/yolo_service.py
 import uuid
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Dict, Any
 import cv2
-import numpy as np
-from ultralytics import YOLO
 
 from app.config import settings
 
@@ -21,6 +19,8 @@ class YOLOService:
     def get_model(cls):
         """Lazy-load the model only once."""
         if cls._model is None:
+            from ultralytics import YOLO
+
             model_path = settings.YOLO_MODEL_PATH
             if not Path(model_path).exists():
                 raise FileNotFoundError(

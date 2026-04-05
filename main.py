@@ -1,10 +1,12 @@
 # main.py
+import asyncio
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
-import logging
 
 from app.config import settings
 from app.routers import detection, health
@@ -39,12 +41,36 @@ app.include_router(sensor.router, prefix="/api/v1", tags=["Sensor"])
 app.include_router(unified.router, prefix="/api/v1", tags=["Unified"])
 
 
+def _warm_models() -> None:
+    """Warm-load models in the background so the web server can bind immediately."""
+    from app.services.transformer_service import TransformerService
+    from app.services.yolo_service import YOLOService
+
+    try:
+        app.state.yolo_model = YOLOService.get_model()
+        logging.info("[Startup] YOLOv8 model loaded successfully from %s", settings.YOLO_MODEL_PATH)
+    except Exception as exc:
+        logging.warning("[Startup] Could not load YOLO model: %s", exc)
+
+    try:
+        app.state.transformer_model = TransformerService.get_model()
+        logging.info(
+            "[Startup] Transformer model loaded successfully from %s",
+            settings.TRANSFORMER_MODEL_PATH,
+        )
+    except Exception as exc:
+        logging.warning("[Startup] Could not load transformer model: %s", exc)
+
+    try:
+        app.state.scaler = TransformerService.get_scaler()
+        logging.info("[Startup] Scaler loaded successfully from %s", settings.SCALER_PATH)
+    except Exception as exc:
+        logging.warning("[Startup] Could not load scaler: %s", exc)
+
+
 @app.on_event("startup")
 async def startup_event():
-    """Initialize app state and optionally warm-load models."""
-    from app.services.yolo_service import YOLOService
-    from app.services.transformer_service import TransformerService
-
+    """Initialize app state and optionally warm-load models without blocking startup."""
     app.state.yolo_model = None
     app.state.transformer_model = None
     app.state.scaler = None
@@ -53,24 +79,11 @@ async def startup_event():
     app.state.num_features = settings.NUM_FEATURES
 
     if not settings.PRELOAD_MODELS:
-        print("[Startup] Skipping model preload; models will be loaded on first inference request.")
+        logging.info("[Startup] Skipping model preload; models will be loaded on first inference request.")
         return
 
-    try:
-        app.state.yolo_model = YOLOService.get_model()
-        print(f"[Startup] YOLOv8 model loaded successfully from {settings.YOLO_MODEL_PATH}")
-    except Exception as e:
-        print(f"[Startup] Warning: Could not load YOLO model: {e}")
-
-    try:
-        app.state.transformer_model = TransformerService.get_model()
-    except Exception as e:
-        print(f"[Startup] Warning: Could not load transformer model: {e}")
-
-    try:
-        app.state.scaler = TransformerService.get_scaler()
-    except Exception as e:
-        print(f"[Startup] Warning: Could not load scaler: {e}")
+    logging.info("[Startup] Scheduling background model preload.")
+    asyncio.create_task(asyncio.to_thread(_warm_models))
 
 
 @app.get("/")

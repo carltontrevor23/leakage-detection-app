@@ -6,8 +6,6 @@ from typing import Any
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile, status
 
 from app.config import settings
-from app.services.transformer_service import TransformerService
-from app.services.yolo_service import YOLOService
 from app.utils.file_handling import save_upload_file, validate_image
 
 router = APIRouter()
@@ -127,6 +125,8 @@ async def unified_detect(
     if _uploaded(image):
         inspection_id = uuid.uuid4().hex[:8]
         try:
+            from app.services.yolo_service import YOLOService
+
             validate_image(
                 file=image,
                 allowed_types=settings.ALLOWED_IMAGE_TYPES,
@@ -159,6 +159,8 @@ async def unified_detect(
 
     if _uploaded(sensor_csv):
         try:
+            from app.services.transformer_service import TransformerService
+
             sequence_length = getattr(request.app.state, "sequence_length", settings.SEQUENCE_LENGTH)
             num_features = getattr(request.app.state, "num_features", settings.NUM_FEATURES)
             anomaly_threshold = getattr(request.app.state, "anomaly_threshold", settings.ANOMALY_THRESHOLD)

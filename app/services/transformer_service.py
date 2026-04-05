@@ -1,39 +1,42 @@
 from typing import Dict, Any, List
 import joblib
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.models import load_model
-from tensorflow.keras import layers
-from tensorflow.keras.utils import register_keras_serializable
 
 from app.config import settings
 
 
-@register_keras_serializable(package="Custom")
-class PositionalEmbedding(layers.Layer):
-    def __init__(self, sequence_length, d_model, **kwargs):
-        super().__init__(**kwargs)
-        self.sequence_length = sequence_length
-        self.d_model = d_model
-        self.position_embeddings = layers.Embedding(
-            input_dim=sequence_length,
-            output_dim=d_model,
-        )
+def get_transformer_custom_objects():
+    import tensorflow as tf
+    from tensorflow.keras import layers
+    from tensorflow.keras.utils import register_keras_serializable
 
-    def call(self, inputs):
-        positions = tf.range(start=0, limit=self.sequence_length, delta=1)
-        embedded_positions = self.position_embeddings(positions)
-        return inputs + embedded_positions
+    @register_keras_serializable(package="Custom")
+    class PositionalEmbedding(layers.Layer):
+        def __init__(self, sequence_length, d_model, **kwargs):
+            super().__init__(**kwargs)
+            self.sequence_length = sequence_length
+            self.d_model = d_model
+            self.position_embeddings = layers.Embedding(
+                input_dim=sequence_length,
+                output_dim=d_model,
+            )
 
-    def get_config(self):
-        config = super().get_config()
-        config.update(
-            {
-                "sequence_length": self.sequence_length,
-                "d_model": self.d_model,
-            }
-        )
-        return config
+        def call(self, inputs):
+            positions = tf.range(start=0, limit=self.sequence_length, delta=1)
+            embedded_positions = self.position_embeddings(positions)
+            return inputs + embedded_positions
+
+        def get_config(self):
+            config = super().get_config()
+            config.update(
+                {
+                    "sequence_length": self.sequence_length,
+                    "d_model": self.d_model,
+                }
+            )
+            return config
+
+    return {"PositionalEmbedding": PositionalEmbedding}
 
 
 class TransformerService:
@@ -48,6 +51,8 @@ class TransformerService:
     def get_model(cls):
         """Load transformer model once."""
         if cls._model is None:
+            from tensorflow.keras.models import load_model
+
             if not settings.TRANSFORMER_MODEL_PATH.exists():
                 raise FileNotFoundError(
                     f"Transformer model file not found at: {settings.TRANSFORMER_MODEL_PATH}"
@@ -56,7 +61,7 @@ class TransformerService:
             try:
                 cls._model = load_model(
                     str(settings.TRANSFORMER_MODEL_PATH),
-                    custom_objects={"PositionalEmbedding": PositionalEmbedding},
+                    custom_objects=get_transformer_custom_objects(),
                     compile=False,
                     safe_mode=False,
                 )
