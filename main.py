@@ -41,9 +41,20 @@ app.include_router(unified.router, prefix="/api/v1", tags=["Unified"])
 
 @app.on_event("startup")
 async def startup_event():
-    """Load models on startup"""
+    """Initialize app state and optionally warm-load models."""
     from app.services.yolo_service import YOLOService
     from app.services.transformer_service import TransformerService
+
+    app.state.yolo_model = None
+    app.state.transformer_model = None
+    app.state.scaler = None
+    app.state.anomaly_threshold = settings.ANOMALY_THRESHOLD
+    app.state.sequence_length = settings.SEQUENCE_LENGTH
+    app.state.num_features = settings.NUM_FEATURES
+
+    if not settings.PRELOAD_MODELS:
+        print("[Startup] Skipping model preload; models will be loaded on first inference request.")
+        return
 
     try:
         app.state.yolo_model = YOLOService.get_model()
@@ -60,10 +71,6 @@ async def startup_event():
         app.state.scaler = TransformerService.get_scaler()
     except Exception as e:
         print(f"[Startup] Warning: Could not load scaler: {e}")
-
-    app.state.anomaly_threshold = settings.ANOMALY_THRESHOLD
-    app.state.sequence_length = settings.SEQUENCE_LENGTH
-    app.state.num_features = settings.NUM_FEATURES
 
 
 @app.get("/")

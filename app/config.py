@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "Pipeline Leak Detector"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
+    PRELOAD_MODELS: bool = False
     CORS_ALLOW_ORIGINS: list[str] = ["http://localhost:8000", "http://127.0.0.1:8000"]
     
     # File upload settings
@@ -39,7 +40,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: Path = MEDIA_ROOT / "uploads"
     RESULT_DIR: Path = MEDIA_ROOT / "results"
     
-    @field_validator("DEBUG", mode="before")
+    @field_validator("DEBUG", "PRELOAD_MODELS", mode="before")
     @classmethod
     def parse_debug(cls, value: Any) -> bool:
         """Accept boolean env values plus common mode strings."""
