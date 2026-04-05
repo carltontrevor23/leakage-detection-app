@@ -1,47 +1,24 @@
 # app/routers/detection.py
 import uuid
 from datetime import datetime
-from pathlib import Path
-from typing import Optional
 
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, status
-from fastapi.responses import JSONResponse
-from PIL import Image
 
 from app.config import settings
-from app.models.detection import PredictionResponse, Detection, BoundingBox, ErrorResponse
+from app.models.detection import (
+    PredictionResponse,
+    Detection,
+    BoundingBox,
+    ErrorResponse,
+    MultimodalPredictionResponse,
+    SensorAnomalyResponse,
+    MultimodalFusion,
+)
+from app.services.multimodal_service import MultimodalService
 from app.services.yolo_service import YOLOService
 from app.utils.file_handling import validate_image, save_upload_file
 
 router = APIRouter()
-
-
-def validate_image_file(file: UploadFile) -> bool:
-    """
-    Validate uploaded file is an allowed image type.
-    Returns True if valid, raises HTTPException if not.
-    """
-    # Check content type
-    if file.content_type not in settings.ALLOWED_IMAGE_TYPES:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid file type. Allowed: {', '.join(settings.ALLOWED_IMAGE_TYPES)}"
-        )
-    
-    # Check file size (read a chunk to avoid loading entire file)
-    file.file.seek(0, 2)  # Seek to end
-    file_size = file.file.tell()
-    file.file.seek(0)  # Reset to beginning
-    
-    max_size_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
-    if file_size > max_size_bytes:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"File too large. Max size: {settings.MAX_UPLOAD_SIZE_MB} MB"
-        )
-    
-    return True
-
 
 @router.post(
     "/detect",
@@ -61,7 +38,11 @@ async def detect_leaks(
     Returns annotated image URL and detection details.
     """
     # Validate uploaded file
-    validate_image_file(image)
+    validate_image(
+        file=image,
+        allowed_types=settings.ALLOWED_IMAGE_TYPES,
+        max_size_mb=settings.MAX_UPLOAD_SIZE_MB,
+    )
     
     # Generate unique ID for this inspection
     inspection_id = uuid.uuid4().hex[:8]
@@ -113,4 +94,84 @@ async def detect_leaks(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Prediction failed: {str(e)}"
+        )
+
+
+@router.post(
+    "/inspect",
+    response_model=MultimodalPredictionResponse,
+    responses={
+        400: {"model": ErrorResponse},
+        500: {"model": ErrorResponse}
+    }
+)
+async def inspect_pipeline(
+    image: UploadFile = File(..., description="Pipeline image to analyze"),
+    sensor_sequence: str = Form(..., description="Sensor sequence as JSON array with shape 20x56"),
+    confidence_threshold: float = Form(0.25, ge=0.1, le=1.0, description="Minimum confidence for image detections")
+):
+    """
+    Run a fused inspection using both image evidence and sensor sequence evidence.
+    """
+    validate_image(
+        file=image,
+        allowed_types=settings.ALLOWED_IMAGE_TYPES,
+        max_size_mb=settings.MAX_UPLOAD_SIZE_MB,
+    )
+
+    inspection_id = uuid.uuid4().hex[:8]
+
+    try:
+        sequence = MultimodalService.parse_sequence(sensor_sequence)
+        upload_path = save_upload_file(
+            file=image,
+            upload_dir=settings.UPLOAD_DIR,
+            prefix=inspection_id,
+        )
+
+        prediction = MultimodalService.predict(
+            image_path=str(upload_path),
+            sensor_sequence=sequence,
+            conf_threshold=confidence_threshold,
+        )
+
+        image_prediction = prediction["image_prediction"]
+        sensor_prediction = prediction["sensor_prediction"]
+        fusion_prediction = prediction["fusion"]
+
+        detections = [
+            Detection(
+                label=d["label"],
+                confidence=d["confidence"],
+                bbox=BoundingBox(**d["bbox"]),
+            )
+            for d in image_prediction["detections"]
+        ]
+
+        response_model = MultimodalPredictionResponse(
+            inspection_id=inspection_id,
+            image_detection_count=image_prediction["detection_count"],
+            image_result_image_url=f"/media/{image_prediction['result_image_path']}",
+            image_detections=detections,
+            sensor_analysis=SensorAnomalyResponse(**sensor_prediction),
+            fusion=MultimodalFusion(**fusion_prediction),
+            created_at=datetime.now(),
+        )
+
+        return response_model.dict()
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Model not found: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Inspection failed: {str(e)}"
         )

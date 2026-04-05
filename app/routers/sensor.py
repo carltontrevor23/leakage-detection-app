@@ -4,6 +4,8 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field, model_validator
 from typing import List
 
+from app.config import settings
+from app.models.detection import SensorAnomalyResponse
 from app.services.transformer_service import TransformerService
 
 router = APIRouter()
@@ -14,46 +16,34 @@ class SensorDataRequest(BaseModel):
     sequence: List[List[float]] = Field(
         ...,
         description="A 20x56 sequence of sensor values",
-        example=[[1.0] * 56 for _ in range(20)]
+        example=[[1.0] * settings.NUM_FEATURES for _ in range(settings.SEQUENCE_LENGTH)]
     )
 
     @model_validator(mode="after")
     def validate_sequence_shape(self):
-        if len(self.sequence) != 20:
-            raise ValueError("Input must contain exactly 20 time steps")
+        if len(self.sequence) != settings.SEQUENCE_LENGTH:
+            raise ValueError(f"Input must contain exactly {settings.SEQUENCE_LENGTH} time steps")
 
         for row in self.sequence:
-            if len(row) != 56:
-                raise ValueError("Each time step must contain exactly 56 features")
+            if len(row) != settings.NUM_FEATURES:
+                raise ValueError(f"Each time step must contain exactly {settings.NUM_FEATURES} features")
 
         return self
 
 
-class SensorPredictionResponse(BaseModel):
-    """Response schema for sensor prediction"""
-    reconstruction_error: float
-    threshold: float
-    is_anomaly: bool
-    leak_detected: bool
-    risk_level: str
-    status: str
-    message: str
-
-
 @router.post(
     "/sensor/predict",
-    response_model=SensorPredictionResponse,
-    summary="Predict leaks from sensor data"
+    response_model=SensorAnomalyResponse,
+    summary="Detect anomalies from sensor data"
 )
 async def predict_from_sensors(data: SensorDataRequest):
     """
-    Analyze sensor sequence data to detect potential leaks.
+    Analyze sensor sequence data to detect anomalies.
     Uses Transformer autoencoder model.
     """
     try:
-        # 🔥 Clean and simple — all logic handled in service
         prediction = TransformerService.predict(data.sequence)
-        return SensorPredictionResponse(**prediction)
+        return SensorAnomalyResponse(**prediction)
 
     except Exception as e:
         raise HTTPException(

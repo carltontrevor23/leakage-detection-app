@@ -1,84 +1,225 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="margin-bottom:1rem;">
-  <a href="/" class="btn btn-secondary">← Back to Home</a>
-</div>
-<section class="panel">
-  <h2>Sensor-Based Leak Detection</h2>
-  <p style="color:#b4c4dd;">Upload a CSV file containing 20 rows and 56 columns of sensor readings.</p>
-
-  <div style="margin-top:1rem;">
-    <label class="form-label">Upload Sensor CSV (20 rows × 56 columns)</label>
-    <input type="file" id="csvInput" accept=".csv" />
+<section class="page-header">
+  <div>
+    <h2>Sensor Anomaly Detection</h2>
+    <p>Upload a CSV of pipeline sensor readings and the Transformer model will identify anomalous patterns.</p>
   </div>
-
-  <div style="margin-top:1rem; display:flex; gap:1rem; flex-wrap:wrap;">
-    <button class="btn btn-primary" id="runBtn">Run Detection</button>
-    <button class="btn btn-secondary" id="sampleBtn">Use Sample Data</button>
-  </div>
-
-  <div id="statusBox" class="status-box" style="display:none;"></div>
 </section>
 
-<section class="panel" id="resultSection" style="display:none;">
-  <h3>Detection Results</h3>
+<section class="analysis-grid">
+  <article class="card">
+    <div class="card-header">
+      <div>
+        <h3>Upload Sensor Data</h3>
+        <p>Accepted format: .csv</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <input type="file" id="csvInput" accept=".csv" class="sr-only-file" />
 
-  <div class="sensor-result-grid">
-    <div class="sensor-result-card">
-      <span class="result-label">Leak Detected</span>
-      <span class="result-value" id="resLeak">—</span>
+      <label class="upload-zone" for="csvInput" id="csvUploadZone">
+        <div class="upload-zone-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 16V7m0 0-3 3m3-3 3 3M4 17.5V19h16v-1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h4>Drag &amp; drop your file here</h4>
+        <p>CSV sensor data for anomaly detection</p>
+      </label>
+
+      <div class="callout callout-warning">
+        <div class="callout-icon" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M10 6.5v4.5m0 2.5h.01M10 2.5l7 12.5H3L10 2.5Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <p>CSV must contain at least 20 rows with 56 sensor feature columns (xmeas_1-xmeas_41, xmv_1-xmv_11).</p>
+      </div>
+
+      <div class="button-row">
+        <button class="btn btn-primary" id="runBtn">Analyse Sensor Data</button>
+        <button class="btn btn-ghost" id="sampleBtn">Use Sample Data</button>
+      </div>
+
+      <div id="statusBox" class="status-box" hidden></div>
     </div>
-    <div class="sensor-result-card">
-      <span class="result-label">Risk Level</span>
-      <span class="result-value" id="resRisk">—</span>
+  </article>
+
+  <article class="card">
+    <div class="card-header">
+      <div>
+        <h3>Analysis Result</h3>
+        <p>Reconstruction error and threshold comparison</p>
+      </div>
     </div>
-    <div class="sensor-result-card">
-      <span class="result-label">Reconstruction Error</span>
-      <span class="result-value" id="resError">—</span>
+    <div class="card-body">
+      <section id="resultSection" hidden>
+        <div class="result-card-top">
+          <div>
+            <span class="result-section-label">Current Analysis</span>
+            <h4 id="bannerStatus">Awaiting Analysis</h4>
+            <p id="bannerMessage" class="secondary-copy">Model output summary will appear here.</p>
+          </div>
+          <span id="resBadge" class="badge badge-normal">Normal</span>
+        </div>
+
+        <div class="metric-grid">
+          <div class="metric-card">
+            <span class="metric-label">Anomaly Detected</span>
+            <strong id="resAnomaly">-</strong>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Risk Level</span>
+            <strong id="resRisk">-</strong>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Reconstruction Error</span>
+            <strong id="resError">-</strong>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Threshold</span>
+            <strong id="resThreshold">-</strong>
+          </div>
+        </div>
+
+        <div class="progress-card">
+          <div class="progress-head">
+            <span>Error vs Threshold</span>
+            <span id="progressText">0%</span>
+          </div>
+          <div class="progress-track">
+            <div id="progressFill" class="progress-fill"></div>
+          </div>
+        </div>
+      </section>
+
+      <div id="resultPlaceholder" class="placeholder-state">
+        <div class="placeholder-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M4 16h3l2.5-8 4 11 2.5-6H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h4>Upload a CSV to see results</h4>
+        <p>The anomaly status, reconstruction error, and threshold comparison will appear here.</p>
+      </div>
     </div>
-    <div class="sensor-result-card">
-      <span class="result-label">Threshold</span>
-      <span class="result-value" id="resThreshold">—</span>
+  </article>
+</section>
+
+<section class="card">
+  <div class="card-header">
+    <div>
+      <h3>About This Model</h3>
+      <p>Time-series anomaly detection capability</p>
     </div>
   </div>
-
-  <div class="sensor-status-banner" id="statusBanner">
-    <h4 id="bannerStatus">—</h4>
-    <p id="bannerMessage">—</p>
+  <div class="card-body">
+    <p>
+      This model uses a Transformer autoencoder trained on the Tennessee Eastman Process dataset.
+      It learns normal operating patterns and flags sequences with high reconstruction error as anomalous.
+    </p>
   </div>
 </section>
 
 <script>
 const statusBox = document.getElementById('statusBox');
 const resultSection = document.getElementById('resultSection');
+const resultPlaceholder = document.getElementById('resultPlaceholder');
 const runBtn = document.getElementById('runBtn');
 const sampleBtn = document.getElementById('sampleBtn');
+const csvInput = document.getElementById('csvInput');
+const csvUploadZone = document.getElementById('csvUploadZone');
 
 function showStatus(msg, isError = false) {
-  statusBox.style.display = 'block';
+  statusBox.hidden = false;
   statusBox.textContent = msg;
   statusBox.className = 'status-box' + (isError ? ' error' : '');
 }
 
+function updateUploadZone(file) {
+  if (!file) {
+    csvUploadZone.innerHTML = `
+      <div class="upload-zone-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 16V7m0 0-3 3m3-3 3 3M4 17.5V19h16v-1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h4>Drag &amp; drop your file here</h4>
+      <p>CSV sensor data for anomaly detection</p>
+    `;
+    return;
+  }
+
+  csvUploadZone.innerHTML = `
+    <div class="upload-zone-icon success" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="m6 12 4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h4>${file.name}</h4>
+    <p>CSV selected and ready for analysis</p>
+  `;
+}
+
+csvInput.addEventListener('change', () => {
+  updateUploadZone(csvInput.files[0]);
+});
+
+['dragenter', 'dragover'].forEach((eventName) => {
+  csvUploadZone.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    csvUploadZone.classList.add('dragover');
+  });
+});
+
+['dragleave', 'drop'].forEach((eventName) => {
+  csvUploadZone.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    csvUploadZone.classList.remove('dragover');
+  });
+});
+
+csvUploadZone.addEventListener('drop', (event) => {
+  const files = event.dataTransfer.files;
+  if (files.length) {
+    csvInput.files = files;
+    updateUploadZone(files[0]);
+  }
+});
+
+function badgeClassForRisk(risk) {
+  if (risk === 'high') return 'badge-critical';
+  if (risk === 'medium') return 'badge-high';
+  return 'badge-normal';
+}
+
 function showResults(data) {
-  const risk = data.risk_level;
+  const risk = String(data.risk_level || '').toLowerCase();
+  const reconstructionError = Number(data.reconstruction_error || 0);
+  const threshold = Number(data.threshold || 0);
+  const ratio = threshold > 0 ? Math.min((reconstructionError / threshold) * 100, 100) : 0;
+  const aboveThreshold = reconstructionError > threshold;
 
-  document.getElementById('resLeak').textContent = data.leak_detected ? 'Yes' : 'No';
-  document.getElementById('resLeak').className = 'result-value ' + (data.leak_detected ? 'high' : 'normal');
-
-  document.getElementById('resRisk').textContent = risk.charAt(0).toUpperCase() + risk.slice(1);
-  document.getElementById('resRisk').className = 'result-value ' + risk;
-
-  document.getElementById('resError').textContent = data.reconstruction_error.toExponential(4);
-  document.getElementById('resThreshold').textContent = data.threshold.toExponential(4);
-
-  const banner = document.getElementById('statusBanner');
-  banner.className = 'sensor-status-banner ' + risk;
+  document.getElementById('resAnomaly').textContent = data.is_anomaly ? 'Yes' : 'No';
+  document.getElementById('resRisk').textContent = risk ? risk.charAt(0).toUpperCase() + risk.slice(1) : '-';
+  document.getElementById('resError').textContent = reconstructionError.toFixed(6);
+  document.getElementById('resThreshold').textContent = threshold.toFixed(6);
   document.getElementById('bannerStatus').textContent = data.status;
   document.getElementById('bannerMessage').textContent = data.message;
 
-  resultSection.style.display = 'block';
+  const resBadge = document.getElementById('resBadge');
+  resBadge.textContent = data.is_anomaly ? 'Elevated' : 'Normal';
+  resBadge.className = 'badge ' + badgeClassForRisk(risk);
+
+  const progressFill = document.getElementById('progressFill');
+  progressFill.style.width = ratio + '%';
+  progressFill.className = 'progress-fill ' + (aboveThreshold ? 'above' : 'below');
+  document.getElementById('progressText').textContent = ratio.toFixed(1) + '%';
+
+  resultPlaceholder.hidden = true;
+  resultSection.hidden = false;
 }
 
 async function runPrediction(sequence) {
@@ -98,9 +239,8 @@ async function runPrediction(sequence) {
     }
 
     const data = await response.json();
-    showStatus('Inference complete.');
+    showStatus('Analysis complete.');
     showResults(data);
-
   } catch (err) {
     showStatus('Error: ' + err.message, true);
   } finally {
@@ -108,16 +248,18 @@ async function runPrediction(sequence) {
   }
 }
 
-// CSV upload
 runBtn.addEventListener('click', () => {
-  const file = document.getElementById('csvInput').files[0];
-  if (!file) { showStatus('Please select a CSV file first.', true); return; }
+  const file = csvInput.files[0];
+  if (!file) {
+    showStatus('Please select a CSV file first.', true);
+    return;
+  }
 
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
       const lines = e.target.result.trim().split('\n');
-      const sequence = lines.map(line => line.split(',').map(Number));
+      const sequence = lines.map((line) => line.split(',').map(Number));
 
       if (sequence.length !== 20) throw new Error(`Expected 20 rows, got ${sequence.length}`);
       if (sequence[0].length !== 56) throw new Error(`Expected 56 columns, got ${sequence[0].length}`);
@@ -130,7 +272,6 @@ runBtn.addEventListener('click', () => {
   reader.readAsText(file);
 });
 
-// Sample data button
 sampleBtn.addEventListener('click', () => {
   const sequence = Array.from({ length: 20 }, () =>
     Array.from({ length: 56 }, () => parseFloat((Math.random() * 2).toFixed(4)))

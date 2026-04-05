@@ -1,62 +1,106 @@
 {% extends "base.html" %}
 
 {% block content %}
-
-<section class="panel hero">
-  <h2>Choose a Detection Mode</h2>
-  <p>Select how you want to analyze your pipeline data.</p>
-</section>
-
-<div class="detection-modes">
-
-  <div class="mode-card">
-    <span class="mode-card-tag">Vision · YOLOv8</span>
-    <h3>Image Detection</h3>
-    <p>Detect visible pipeline leaks from uploaded images. Get annotated results with bounding boxes and confidence scores in seconds.</p>
-    <div class="mode-card-features">
-      <span>Annotated bounding boxes</span>
-      <span>Adjustable confidence threshold</span>
-      <span>100+ images / hour throughput</span>
-      <span>0.95 field-calibrated precision</span>
-    </div>
-    <a href="/upload" class="btn btn-primary" style="margin-top:0.5rem;">Open Image Detection</a>
-  </div>
-
-  <div class="mode-card">
-    <span class="mode-card-tag">Sensor · Transformer</span>
-    <h3>Sensor Detection</h3>
-    <p>Detect abnormal pipeline behavior from time-series sensor sequences using a Transformer autoencoder anomaly model.</p>
-    <div class="mode-card-features">
-      <span>Reconstruction error scoring</span>
-      <span>Low / Medium / High risk levels</span>
-      <span>CSV upload or sample data</span>
-      <span>20 × 56 sensor sequence input</span>
-    </div>
-    <a href="/sensor" class="btn btn-primary" style="margin-top:0.5rem;">Open Sensor Detection</a>
-  </div>
-
-</div>
-
-<section class="panel">
-  <h3>How It Works</h3>
-  <div class="how-it-works-grid">
-    <div>
-      <h4>Vision Pipeline</h4>
-      <ol>
-        <li>Upload a pipeline image (JPEG, PNG, WebP)</li>
-        <li>Set your confidence threshold</li>
-        <li>View annotated result and leak intel instantly</li>
-      </ol>
-    </div>
-    <div>
-      <h4>Sensor Pipeline</h4>
-      <ol>
-        <li>Upload a sensor CSV or use sample data</li>
-        <li>Run transformer anomaly detection</li>
-        <li>View leak risk level and anomaly status</li>
-      </ol>
-    </div>
+<section class="page-header home-header">
+  <div>
+    <h2>Pipeline Integrity Monitoring</h2>
+    <p>AI-powered leakage detection using computer vision and sensor anomaly analysis.</p>
   </div>
 </section>
 
+<section class="stats-grid">
+  <article class="card stat-card">
+    <div class="card-header">
+      <div>
+        <h3>Detection Models</h3>
+        <p>YOLOv8 + Transformer</p>
+      </div>
+    </div>
+    <div class="stat-value">2 Active</div>
+  </article>
+
+  <article class="card stat-card">
+    <div class="card-header">
+      <div>
+        <h3>Modalities</h3>
+        <p>Visual + Sensor data</p>
+      </div>
+    </div>
+    <div class="stat-value">Multimodal</div>
+  </article>
+
+  <article class="card stat-card">
+    <div class="card-header">
+      <div>
+        <h3>Status</h3>
+        <p>All systems operational</p>
+      </div>
+    </div>
+    <div class="stat-inline">
+      <span class="badge badge-normal">Normal</span>
+    </div>
+  </article>
+</section>
+
+<section class="split-grid">
+  <article class="card action-card">
+    <div class="card-header">
+      <div>
+        <h3>Image Detection</h3>
+        <p>YOLOv8 visual inspection</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <p>
+        Analyze pipeline imagery for visible leakage indicators, surface anomalies, and suspected leak zones.
+        Results include annotated images and location-aware bounding box metadata.
+      </p>
+      <a href="/upload" class="btn btn-primary">Run Image Detection</a>
+    </div>
+  </article>
+
+  <article class="card action-card">
+    <div class="card-header">
+      <div>
+        <h3>Sensor Analysis</h3>
+        <p>Transformer anomaly detection</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <p>
+        Evaluate telemetry sequences to detect anomalous operating behavior that may indicate internal or emerging leaks.
+        The model compares live patterns against learned normal operating states.
+      </p>
+      <a href="/sensor" class="btn btn-primary">Run Sensor Analysis</a>
+    </div>
+  </article>
+</section>
+
+<section class="card">
+  <div class="card-header">
+    <div>
+      <h3>How It Works</h3>
+      <p>Simple workflow for field teams and control room operators</p>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="process-steps">
+      <div class="process-step">
+        <div class="step-number">1</div>
+        <h4>Upload Data</h4>
+        <p>Submit pipeline imagery or sensor telemetry for analysis.</p>
+      </div>
+      <div class="process-step">
+        <div class="step-number">2</div>
+        <h4>AI Analysis</h4>
+        <p>Vision and anomaly models evaluate the evidence against learned patterns.</p>
+      </div>
+      <div class="process-step">
+        <div class="step-number">3</div>
+        <h4>Review Results</h4>
+        <p>Inspect status outputs, confidence indicators, and operational recommendations.</p>
+      </div>
+    </div>
+  </div>
+</section>
 {% endblock %}

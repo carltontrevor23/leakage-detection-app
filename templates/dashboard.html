@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <h2>Unified Pipeline Analysis</h2>
+    <p>Combine image-based and sensor-based evidence into a single operational risk view.</p>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-header">
+    <div>
+      <h3>Unified Submission</h3>
+      <p>Upload one file type or both for a fused assessment</p>
+    </div>
+  </div>
+  <div class="card-body">
+    <form id="unifiedForm" class="stack-md">
+      <div class="analysis-grid">
+        <div class="stack-sm">
+          <input type="file" id="imageInput" name="image" accept="image/jpeg,image/png,image/webp" class="sr-only-file" />
+          <label class="upload-zone" for="imageInput" id="imageUploadZone">
+            <div class="upload-zone-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 16V7m0 0-3 3m3-3 3 3M4 17.5V19h16v-1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <h4>Drag &amp; drop your file here</h4>
+            <p>Optional image file for YOLOv8 analysis</p>
+          </label>
+        </div>
+
+        <div class="stack-sm">
+          <input type="file" id="csvInput" name="sensor_csv" accept=".csv,text/csv" class="sr-only-file" />
+          <label class="upload-zone" for="csvInput" id="csvUploadZone">
+            <div class="upload-zone-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 16V7m0 0-3 3m3-3 3 3M4 17.5V19h16v-1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <h4>Drag &amp; drop your file here</h4>
+            <p>Optional CSV file for Transformer analysis</p>
+          </label>
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button type="submit" class="btn btn-primary" id="runButton">Run Analysis</button>
+      </div>
+    </form>
+
+    <div id="statusBox" class="status-box" hidden></div>
+  </div>
+</section>
+
+<section class="card" id="pipelineStatusCard" hidden>
+  <div class="card-header">
+    <div>
+      <h3>Pipeline Status</h3>
+      <p>Combined recommendation from submitted evidence</p>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="result-card-top">
+      <div>
+        <span class="result-section-label">Unified Risk</span>
+        <h4 id="riskLevel">Normal</h4>
+        <p id="recommendationText" class="secondary-copy">No leakage indicators detected. Continue routine monitoring.</p>
+      </div>
+      <span class="badge badge-normal" id="riskChip">Normal</span>
+    </div>
+  </div>
+</section>
+
+<section class="analysis-grid" id="detailGrid" hidden>
+  <article class="card">
+    <div class="card-header">
+      <div>
+        <h3>Visual Results</h3>
+        <p>YOLOv8 model output</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="visualContent" class="stack-sm">
+        <div class="placeholder-state compact">
+          <div class="placeholder-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="4" y="5" width="16" height="14" rx="3" stroke="currentColor" stroke-width="1.8"/>
+              <circle cx="10" cy="11" r="2.3" stroke="currentColor" stroke-width="1.8"/>
+            </svg>
+          </div>
+          <h4>No visual result yet</h4>
+          <p>Upload an image or run the analysis to populate this panel.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article class="card">
+    <div class="card-header">
+      <div>
+        <h3>Sensor Results</h3>
+        <p>Transformer model output</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="sensorContent" class="stack-sm">
+        <div class="placeholder-state compact">
+          <div class="placeholder-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M4 16h3l2.5-8 4 11 2.5-6H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h4>No sensor result yet</h4>
+          <p>Upload a CSV or run the analysis to populate this panel.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<script>
+const form = document.getElementById('unifiedForm');
+const statusBox = document.getElementById('statusBox');
+const runButton = document.getElementById('runButton');
+const pipelineStatusCard = document.getElementById('pipelineStatusCard');
+const detailGrid = document.getElementById('detailGrid');
+const riskLevel = document.getElementById('riskLevel');
+const riskChip = document.getElementById('riskChip');
+const recommendationText = document.getElementById('recommendationText');
+const visualContent = document.getElementById('visualContent');
+const sensorContent = document.getElementById('sensorContent');
+const imageInput = document.getElementById('imageInput');
+const csvInput = document.getElementById('csvInput');
+const imageUploadZone = document.getElementById('imageUploadZone');
+const csvUploadZone = document.getElementById('csvUploadZone');
+
+function setStatus(message, isError = false) {
+  statusBox.hidden = false;
+  statusBox.textContent = message;
+  statusBox.className = 'status-box' + (isError ? ' error' : '');
+}
+
+function setUploadZone(zone, file, fileType) {
+  if (!file) {
+    const descriptor = fileType === 'image'
+      ? 'Optional image file for YOLOv8 analysis'
+      : 'Optional CSV file for Transformer analysis';
+
+    zone.innerHTML = `
+      <div class="upload-zone-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 16V7m0 0-3 3m3-3 3 3M4 17.5V19h16v-1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h4>Drag &amp; drop your file here</h4>
+      <p>${descriptor}</p>
+    `;
+    return;
+  }
+
+  zone.innerHTML = `
+    <div class="upload-zone-icon success" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="m6 12 4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h4>${file.name}</h4>
+    <p>File selected and ready for analysis</p>
+  `;
+}
+
+function attachDragAndDrop(zone, input, type) {
+  input.addEventListener('change', () => {
+    setUploadZone(zone, input.files[0], type);
+  });
+
+  ['dragenter', 'dragover'].forEach((eventName) => {
+    zone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      zone.classList.add('dragover');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach((eventName) => {
+    zone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      zone.classList.remove('dragover');
+    });
+  });
+
+  zone.addEventListener('drop', (event) => {
+    const files = event.dataTransfer.files;
+    if (files.length) {
+      input.files = files;
+      setUploadZone(zone, files[0], type);
+    }
+  });
+}
+
+function badgeClassForRisk(level) {
+  if (level === 'CRITICAL') return 'badge-critical';
+  if (level === 'HIGH') return 'badge-high';
+  if (level === 'ELEVATED') return 'badge-elevated';
+  return 'badge-normal';
+}
+
+function showPipelineStatus(data) {
+  pipelineStatusCard.hidden = false;
+  riskLevel.textContent = data.risk_level;
+  recommendationText.textContent = data.recommendation;
+  riskChip.textContent = data.risk_level;
+  riskChip.className = 'badge ' + badgeClassForRisk(data.risk_level);
+}
+
+function renderVisualResult(result) {
+  if (!result) {
+    visualContent.innerHTML = '<p class="empty-copy">No image submitted for this run.</p>';
+    return;
+  }
+
+  if (result.error) {
+    visualContent.innerHTML = `<div class="status-box error">${result.error}</div>`;
+    return;
+  }
+
+  const confidence = ((result.visual_confidence || 0) * 100).toFixed(1);
+  visualContent.innerHTML = `
+    <div class="result-card-top">
+      <div>
+        <span class="result-section-label">Visual Evidence</span>
+        <h4>${result.visual_leak_detected ? 'Leak indicators detected' : 'No visible leak detected'}</h4>
+      </div>
+      <span class="badge ${result.visual_leak_detected ? 'badge-critical' : 'badge-normal'}">
+        ${result.visual_leak_detected ? 'Leak Detected' : 'No Leak'}
+      </span>
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <span class="metric-label">Confidence</span>
+        <strong>${confidence}%</strong>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Detections</span>
+        <strong>${result.detection_count ?? 0}</strong>
+      </div>
+    </div>
+    ${result.annotated_image_url ? `<div class="result-media"><img src="${result.annotated_image_url}" alt="Annotated result" /></div>` : '<p class="empty-copy">No annotated image available.</p>'}
+  `;
+}
+
+function renderSensorResult(result) {
+  if (!result) {
+    sensorContent.innerHTML = '<p class="empty-copy">No sensor CSV submitted for this run.</p>';
+    return;
+  }
+
+  if (result.error) {
+    sensorContent.innerHTML = `<div class="status-box error">${result.error}</div>`;
+    return;
+  }
+
+  const errorValue = Number(result.reconstruction_error || 0);
+  const thresholdValue = Number(result.anomaly_threshold || 0);
+  const ratio = thresholdValue > 0 ? Math.min((errorValue / thresholdValue) * 100, 100) : 0;
+  const flagged = Boolean(result.sensor_anomaly_detected);
+  const progressId = `progress-${Date.now()}`;
+
+  sensorContent.innerHTML = `
+    <div class="result-card-top">
+      <div>
+        <span class="result-section-label">Sensor Evidence</span>
+        <h4>${flagged ? 'Anomalous operating behavior detected' : 'Sensor readings within threshold'}</h4>
+      </div>
+      <span class="badge ${flagged ? 'badge-elevated' : 'badge-normal'}">
+        ${flagged ? 'Elevated' : 'Normal'}
+      </span>
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <span class="metric-label">Reconstruction Error</span>
+        <strong>${errorValue.toFixed(6)}</strong>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Threshold</span>
+        <strong>${thresholdValue.toFixed(6)}</strong>
+      </div>
+    </div>
+    <div class="progress-card">
+      <div class="progress-head">
+        <span>Error vs Threshold</span>
+        <span>${ratio.toFixed(1)}%</span>
+      </div>
+      <div class="progress-track">
+        <div id="${progressId}" class="progress-fill ${flagged ? 'above' : 'below'}"></div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById(progressId).style.width = `${ratio}%`;
+}
+
+attachDragAndDrop(imageUploadZone, imageInput, 'image');
+attachDragAndDrop(csvUploadZone, csvInput, 'csv');
+
+form.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  setStatus('Running unified analysis...');
+  runButton.disabled = true;
+  pipelineStatusCard.hidden = true;
+  detailGrid.hidden = true;
+
+  const formData = new FormData(form);
+
+  try {
+    const response = await fetch('/api/v1/unified-detect', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || data.error || 'Unified analysis failed.');
+    }
+
+    setStatus('Unified analysis complete.');
+    showPipelineStatus(data);
+    renderVisualResult(data.visual_result);
+    renderSensorResult(data.sensor_result);
+    detailGrid.hidden = false;
+  } catch (error) {
+    setStatus(`Error: ${error.message}`, true);
+  } finally {
+    runButton.disabled = false;
+  }
+});
+</script>
+{% endblock %}

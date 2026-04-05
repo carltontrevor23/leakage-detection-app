@@ -1,39 +1,175 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="margin-bottom:1rem;">
-  <a href="/" class="btn btn-secondary">← Back to Home</a>
-</div>
-<section class="panel upload-panel">
-  <h2>Upload an Image for Leak Detection</h2>
-  <form id="detectForm" class="upload-form">
-    <label class="form-label">Select pipeline image</label>
-    <input type="file" name="image" id="imageInput" accept="image/jpeg,image/png,image/webp" required />
+<section class="page-header">
+  <div>
+    <h2>Image-Based Leak Detection</h2>
+    <p>Upload a pipeline image and YOLOv8 will detect visible signs of leakage.</p>
+  </div>
+</section>
 
-    <label class="form-label">Confidence threshold: <span id="thresholdValue">0.25</span></label>
-    <input type="range" id="confidence" name="confidence_threshold" min="0.1" max="1.0" step="0.05" value="0.25" />
+<section class="analysis-grid">
+  <article class="card">
+    <div class="card-header">
+      <div>
+        <h3>Upload Image</h3>
+        <p>Accepted formats: .jpg, .jpeg, .png</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <form id="detectForm" class="stack-sm">
+        <input type="file" name="image" id="imageInput" accept="image/jpeg,image/png,image/webp" required class="sr-only-file" />
 
-    <button type="submit" class="btn btn-primary" id="uploadButton">Run Detection</button>
-  </form>
+        <label class="upload-zone" for="imageInput" id="imageUploadZone">
+          <div class="upload-zone-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 16V7m0 0-3 3m3-3 3 3M4 17.5V19h16v-1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h4>Drag &amp; drop your file here</h4>
+          <p>JPEG or PNG image for visual leak detection</p>
+        </label>
 
-  <div id="statusBox" class="status-box" style="display:none;"></div>
-  <div id="resultBox" class="result-box" style="display:none;"></div>
+        <div class="form-row">
+          <label class="form-label" for="confidence">Confidence Threshold <span id="thresholdValue">0.25</span></label>
+          <input type="range" id="confidence" name="confidence_threshold" min="0.1" max="1.0" step="0.05" value="0.25" />
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="uploadButton">Analyse Image</button>
+      </form>
+
+      <div id="statusBox" class="status-box" hidden></div>
+    </div>
+  </article>
+
+  <article class="card">
+    <div class="card-header">
+      <div>
+        <h3>Detection Result</h3>
+        <p>Annotated output and detection metadata</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <div id="resultBox" class="result-shell" hidden>
+        <div class="result-card-top">
+          <div>
+            <span class="result-section-label">Current Analysis</span>
+            <div id="resultSummary"></div>
+          </div>
+          <span id="resultBadge" class="badge badge-normal">No Leak</span>
+        </div>
+        <div id="resultMedia" class="result-media"></div>
+        <div id="resultMeta" class="metric-grid"></div>
+        <div id="resultTableWrap"></div>
+      </div>
+
+      <div id="resultPlaceholder" class="placeholder-state">
+        <div class="placeholder-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <rect x="4" y="5" width="16" height="14" rx="3" stroke="currentColor" stroke-width="1.8"/>
+            <circle cx="10" cy="11" r="2.3" stroke="currentColor" stroke-width="1.8"/>
+            <path d="m7 17 4-4 2.5 2.5L17 12l3 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+    </div>
+  </article>
+</section>
+
+<section class="card">
+  <div class="card-header">
+    <div>
+      <h3>About This Model</h3>
+      <p>Visual inspection capability</p>
+    </div>
+  </div>
+  <div class="card-body">
+    <p>
+      This model is built on YOLOv8 and was trained to identify visual indicators of pipeline leakage
+      from photographic input. Results indicate the presence and location of potential leak zones.
+    </p>
+  </div>
 </section>
 
 <script>
 const form = document.getElementById('detectForm');
 const statusBox = document.getElementById('statusBox');
 const resultBox = document.getElementById('resultBox');
+const resultPlaceholder = document.getElementById('resultPlaceholder');
 const uploadButton = document.getElementById('uploadButton');
 const thresholdValue = document.getElementById('thresholdValue');
 const confidence = document.getElementById('confidence');
-confidence.addEventListener('input', () => thresholdValue.textContent = confidence.value);
+const imageInput = document.getElementById('imageInput');
+const imageUploadZone = document.getElementById('imageUploadZone');
+const resultSummary = document.getElementById('resultSummary');
+const resultBadge = document.getElementById('resultBadge');
+const resultMedia = document.getElementById('resultMedia');
+const resultMeta = document.getElementById('resultMeta');
+const resultTableWrap = document.getElementById('resultTableWrap');
+
+function showStatus(message, isError = false) {
+  statusBox.hidden = false;
+  statusBox.textContent = message;
+  statusBox.className = 'status-box' + (isError ? ' error' : '');
+}
+
+function updateUploadZone(file) {
+  if (!file) {
+    imageUploadZone.innerHTML = `
+      <div class="upload-zone-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 16V7m0 0-3 3m3-3 3 3M4 17.5V19h16v-1.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h4>Drag &amp; drop your file here</h4>
+      <p>JPEG or PNG image for visual leak detection</p>
+    `;
+    return;
+  }
+
+  imageUploadZone.innerHTML = `
+    <div class="upload-zone-icon success" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="m6 12 4 4 8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h4>${file.name}</h4>
+    <p>Image selected and ready for analysis</p>
+  `;
+}
+
+confidence.addEventListener('input', () => {
+  thresholdValue.textContent = confidence.value;
+});
+
+imageInput.addEventListener('change', () => {
+  updateUploadZone(imageInput.files[0]);
+});
+
+['dragenter', 'dragover'].forEach((eventName) => {
+  imageUploadZone.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    imageUploadZone.classList.add('dragover');
+  });
+});
+
+['dragleave', 'drop'].forEach((eventName) => {
+  imageUploadZone.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    imageUploadZone.classList.remove('dragover');
+  });
+});
+
+imageUploadZone.addEventListener('drop', (event) => {
+  const files = event.dataTransfer.files;
+  if (files.length) {
+    imageInput.files = files;
+    updateUploadZone(files[0]);
+  }
+});
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
-  statusBox.style.display = 'block';
-  resultBox.style.display = 'none';
-  statusBox.textContent = 'Uploading image and running inference...';
+  showStatus('Uploading image and running inference...');
   uploadButton.disabled = true;
 
   const formData = new FormData(form);
@@ -50,41 +186,69 @@ form.addEventListener('submit', async (event) => {
     }
 
     const data = await response.json();
-    statusBox.textContent = `Detected ${data.detection_count} objects with inspection ID ${data.inspection_id}.`;
+    const leakDetected = Number(data.detection_count) > 0;
 
-    const resultsHtml = `
-      <h3>Detection Results</h3>
-      <p><strong>Inspection ID:</strong> ${data.inspection_id}</p>
-      <p><strong>Detected Objects:</strong> ${data.detection_count}</p>
-      <div class="result-image">
-        <img src="${data.result_image_url}" alt="Detection result" />
-      </div>
-      <table class="result-table">
-        <thead>
-          <tr><th>#</th><th>Label</th><th>Confidence</th><th>BBox (x1,y1,x2,y2)</th></tr>
-        </thead>
-        <tbody>
-          ${data.detections.map((d, i) => {
-            const bbox = d.bbox;
-            const bboxText = `${bbox.x1}, ${bbox.y1}, ${bbox.x2}, ${bbox.y2}`;
-            return `
-            <tr>
-              <td>${i + 1}</td>
-              <td>${d.label}</td>
-              <td>${(d.confidence * 100).toFixed(1)}%</td>
-              <td>${bboxText}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
+    showStatus(`Analysis complete for inspection ${data.inspection_id}.`);
+    resultPlaceholder.hidden = true;
+    resultBox.hidden = false;
+
+    resultSummary.innerHTML = `
+      <h4>${leakDetected ? 'Leak signatures detected' : 'No visible leak detected'}</h4>
+      <p>Inspection ID: ${data.inspection_id}</p>
     `;
 
-    resultBox.innerHTML = resultsHtml;
-    resultBox.style.display = 'block';
+    resultBadge.textContent = leakDetected ? 'Leak Detected' : 'No Leak';
+    resultBadge.className = 'badge ' + (leakDetected ? 'badge-critical' : 'badge-normal');
 
+    resultMedia.innerHTML = `
+      <img src="${data.result_image_url}" alt="Detection result" />
+    `;
+
+    const topConfidence = data.detections.length
+      ? Math.max(...data.detections.map((item) => Number(item.confidence || 0)))
+      : 0;
+
+    resultMeta.innerHTML = `
+      <div class="metric-card">
+        <span class="metric-label">Detections</span>
+        <strong>${data.detection_count}</strong>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Top Confidence</span>
+        <strong>${(topConfidence * 100).toFixed(1)}%</strong>
+      </div>
+    `;
+
+    if (data.detections.length) {
+      resultTableWrap.innerHTML = `
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Label</th>
+                <th>Confidence</th>
+                <th>Bounding Box</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.detections.map((d, index) => `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td>${d.label}</td>
+                  <td>${(Number(d.confidence) * 100).toFixed(1)}%</td>
+                  <td>${d.bbox.x1}, ${d.bbox.y1}, ${d.bbox.x2}, ${d.bbox.y2}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    } else {
+      resultTableWrap.innerHTML = '<p class="empty-copy">No bounding boxes were returned for this analysis.</p>';
+    }
   } catch (err) {
-    statusBox.textContent = `Error: ${err.message}`;
-    statusBox.classList.add('error');
+    showStatus(`Error: ${err.message}`, true);
   } finally {
     uploadButton.disabled = false;
   }
