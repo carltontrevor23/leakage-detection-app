@@ -43,7 +43,7 @@ six==1.17.0
 starlette==1.0.0
 sympy==1.14.0
 tensorflow-intel==2.15.0; platform_system == "Windows"
-tensorflow==2.15.0; platform_system != "Windows"
+tensorflow-cpu==2.15.0; platform_system != "Windows"
 torch==2.11.0
 torchvision==0.26.0
 typing-inspection==0.4.2
