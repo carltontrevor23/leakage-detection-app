@@ -190,18 +190,6 @@ img {
   height: 18px;
 }
 
-.coming-badge {
-  margin-left: auto;
-  padding: 4px 8px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
 .sidebar-footer {
   margin-top: auto;
   padding: 24px 8px 0;
@@ -224,6 +212,7 @@ img {
   padding: 32px;
   background: var(--surface-alt);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .mobile-topbar {
@@ -257,6 +246,8 @@ img {
   border: 1px solid var(--border);
   border-radius: 10px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .card + .card,
@@ -285,6 +276,9 @@ section + section {
 
 .card-body {
   padding: 24px;
+  display: grid;
+  gap: 24px;
+  align-content: start;
 }
 
 .card-body p {
@@ -298,6 +292,7 @@ section + section {
 .metric-grid {
   display: grid;
   gap: 16px;
+  align-items: stretch;
 }
 
 .stats-grid {
@@ -308,6 +303,12 @@ section + section {
 .split-grid,
 .analysis-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.split-grid > *,
+.analysis-grid > * {
+  min-width: 0;
+  height: 100%;
 }
 
 .metric-grid {
@@ -337,21 +338,22 @@ section + section {
 .process-steps {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 24px;
   align-items: start;
 }
 
 .process-step {
   position: relative;
-  padding-right: 16px;
+  min-width: 0;
+  padding-right: 24px;
 }
 
 .process-step:not(:last-child)::after {
   content: '';
   position: absolute;
   top: 20px;
-  left: calc(100% - 24px);
-  width: calc(100% - 12px);
+  left: calc(100% - 12px);
+  width: 24px;
   height: 1px;
   background: var(--border);
 }
@@ -430,6 +432,7 @@ section + section {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .form-label {
@@ -479,6 +482,7 @@ select:focus {
 .upload-zone {
   width: 100%;
   min-height: 220px;
+  min-width: 0;
   border: 2px dashed var(--border);
   border-radius: 10px;
   padding: 40px 24px;
@@ -606,6 +610,7 @@ select:focus {
 .result-shell {
   display: grid;
   gap: 24px;
+  min-width: 0;
 }
 
 .result-card-top {
@@ -613,6 +618,7 @@ select:focus {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .result-section-label,
@@ -630,6 +636,7 @@ select:focus {
   border-radius: 10px;
   background: var(--surface-alt);
   padding: 16px;
+  min-width: 0;
 }
 
 .metric-card strong {
@@ -641,11 +648,14 @@ select:focus {
 }
 
 .result-media img {
+  width: 100%;
   border-radius: 10px;
   border: 1px solid var(--border);
+  object-fit: cover;
 }
 
 .table-wrap {
+  min-width: 0;
   overflow-x: auto;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -742,6 +752,7 @@ select:focus {
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--surface-alt);
+  min-width: 0;
 }
 
 .progress-head {
@@ -855,9 +866,23 @@ select:focus {
 
   .button-row {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .btn {
     width: 100%;
+  }
+
+  .card-header,
+  .card-body,
+  .status-box {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .upload-zone,
+  .placeholder-state {
+    min-height: 200px;
+    padding: 28px 20px;
   }
 }

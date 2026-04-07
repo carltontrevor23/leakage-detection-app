@@ -3,7 +3,7 @@
 {% block content %}
 <section class="page-header">
   <div>
-    <h2>Unified Pipeline Analysis</h2>
+    <h2>Multimodal Analysis</h2>
     <p>Combine image-based and sensor-based evidence into a single operational risk view.</p>
   </div>
 </section>
@@ -11,8 +11,8 @@
 <section class="card">
   <div class="card-header">
     <div>
-      <h3>Unified Submission</h3>
-      <p>Upload one file type or both for a fused assessment</p>
+      <h3>Multimodal Submission</h3>
+      <p>Upload one file type or both for a fused assessment.</p>
     </div>
   </div>
   <div class="card-body">
@@ -64,7 +64,7 @@
   <div class="card-body">
     <div class="result-card-top">
       <div>
-        <span class="result-section-label">Unified Risk</span>
+        <span class="result-section-label">Multimodal Risk</span>
         <h4 id="riskLevel">Normal</h4>
         <p id="recommendationText" class="secondary-copy">No leakage indicators detected. Continue routine monitoring.</p>
       </div>
@@ -306,7 +306,7 @@ attachDragAndDrop(csvUploadZone, csvInput, 'csv');
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
-  setStatus('Running unified analysis...');
+  setStatus('Running multimodal analysis...');
   runButton.disabled = true;
   pipelineStatusCard.hidden = true;
   detailGrid.hidden = true;
@@ -321,10 +321,10 @@ form.addEventListener('submit', async (event) => {
 
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.detail || data.error || 'Unified analysis failed.');
+      throw new Error(data.detail || data.error || 'Multimodal analysis failed.');
     }
 
-    setStatus('Unified analysis complete.');
+    setStatus('Multimodal analysis complete.');
     showPipelineStatus(data);
     renderVisualResult(data.visual_result);
     renderSensorResult(data.sensor_result);

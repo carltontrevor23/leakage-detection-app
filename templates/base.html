@@ -45,6 +45,17 @@
             <span>Dashboard</span>
           </a>
 
+          <a href="/dashboard" class="nav-link{% if request.url.path == '/dashboard' %} active{% endif %}">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none">
+                <rect x="3" y="4" width="6" height="5" rx="1.5" stroke="currentColor" stroke-width="1.7"/>
+                <rect x="11" y="4" width="6" height="5" rx="1.5" stroke="currentColor" stroke-width="1.7"/>
+                <rect x="7" y="11" width="6" height="5" rx="1.5" stroke="currentColor" stroke-width="1.7"/>
+              </svg>
+            </span>
+            <span>Multimodal Analysis</span>
+          </a>
+
           <a href="/upload" class="nav-link{% if request.url.path == '/upload' %} active{% endif %}">
             <span class="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 20 20" fill="none">
@@ -53,7 +64,7 @@
                 <path d="M15.5 7.5h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
               </svg>
             </span>
-            <span>Image Detection</span>
+            <span>Image Analysis</span>
           </a>
 
           <a href="/sensor" class="nav-link{% if request.url.path == '/sensor' %} active{% endif %}">
@@ -63,18 +74,6 @@
               </svg>
             </span>
             <span>Sensor Analysis</span>
-          </a>
-
-          <a href="/dashboard" class="nav-link{% if request.url.path == '/dashboard' %} active{% endif %}">
-            <span class="nav-icon" aria-hidden="true">
-              <svg viewBox="0 0 20 20" fill="none">
-                <rect x="3" y="4" width="6" height="5" rx="1.5" stroke="currentColor" stroke-width="1.7"/>
-                <rect x="11" y="4" width="6" height="5" rx="1.5" stroke="currentColor" stroke-width="1.7"/>
-                <rect x="7" y="11" width="6" height="5" rx="1.5" stroke="currentColor" stroke-width="1.7"/>
-              </svg>
-            </span>
-            <span>Unified Analysis</span>
-            <span class="coming-badge">Coming Soon</span>
           </a>
         </nav>
 
